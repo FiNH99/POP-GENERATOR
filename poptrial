@@ -2,6 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>POP Generator PDF 60x20cm</title>
 
 <!-- html2canvas -->
@@ -11,16 +12,131 @@
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
 <style>
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
 body {
   font-family: Arial, Helvetica, sans-serif;
   background: #f2f2f2;
   padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+h1 {
+  color: #333;
+  margin-bottom: 20px;
+  font-size: 24px;
+}
+
+.controls {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 select, button {
-  font-size: 18px;
+  font-size: 16px;
   padding: 10px 15px;
-  margin-right: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+select {
+  min-width: 250px;
+}
+
+select:focus {
+  outline: none;
+  border-color: #4f86c6;
+}
+
+button {
+  background: #4f86c6;
+  color: white;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  background: #3a6ba5;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.loading {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #fff;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.message {
+  padding: 12px 15px;
+  border-radius: 4px;
+  margin: 10px 0;
+  display: none;
+}
+
+.message.error {
+  background: #fee;
+  color: #c33;
+  border: 1px solid #fcc;
+  display: block;
+}
+
+.message.success {
+  background: #efe;
+  color: #3c3;
+  border: 1px solid #cfc;
+  display: block;
+}
+
+.message.info {
+  background: #eef;
+  color: #33c;
+  border: 1px solid #ccf;
+  display: block;
+}
+
+#hasil {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  min-height: 200px;
+  overflow-x: auto;
+}
+
+#hasil:empty {
+  display: none;
 }
 
 /* ===== POP 60x20 CM (300 DPI) ===== */
@@ -30,6 +146,7 @@ select, button {
   background: #4f86c6;
   padding: 120px;
   box-sizing: border-box;
+  position: relative;
 }
 
 .card {
@@ -41,6 +158,7 @@ select, button {
   box-sizing: border-box;
   display: flex;
   gap: 120px;
+  position: relative;
 }
 
 .left {
@@ -48,39 +166,52 @@ select, button {
   display: flex;
   justify-content: center;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .left img {
   max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
 }
 
 .right {
   width: 75%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .right img {
   max-width: 600px;
+  max-height: 600px;
+  object-fit: contain;
+  margin-bottom: 40px;
 }
 
 /* TEXT */
-h2 {
+.pop h2 {
   font-size: 160px;
   margin: 40px 0;
+  color: #333;
+  line-height: 1.2;
 }
 
-p {
+.pop p {
   font-size: 90px;
   margin: 30px 0;
+  color: #555;
 }
 
-.old-price {
+.pop .old-price {
   font-size: 110px;
   text-decoration: line-through;
-  color: #666;
+  color: #999;
+  margin: 20px 0;
 }
 
-.promo-price {
-  background: red;
+.pop .promo-price {
+  background: #dc3545;
   color: white;
   font-size: 200px;
   font-weight: bold;
@@ -88,103 +219,307 @@ p {
   border-radius: 100px;
   display: inline-block;
   margin: 40px 0;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.download-btn-container {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.download-btn-container button {
+  font-size: 18px;
+  padding: 12px 24px;
 }
 </style>
 </head>
 
 <body>
 
-<h2>POP Generator → PDF (60 × 20 cm)</h2>
+<h1>POP Generator → PDF (60 × 20 cm)</h1>
 
-<select id="produk">
-  <option value="">-- Pilih Produk --</option>
-</select>
+<div class="controls">
+  <select id="produk">
+    <option value="">-- Pilih Produk --</option>
+  </select>
 
-<button onclick="generatePOP()">Generate POP</button>
+  <button id="btnGenerate" onclick="generatePOP()">Generate POP</button>
+
+  <div id="loadingIndicator" style="display: none;">
+    <div class="loading"></div>
+    <span>Memuat data...</span>
+  </div>
+</div>
+
+<div id="message" class="message"></div>
 
 <div id="hasil"></div>
 
 <script>
-const API_URL = "https://script.googleusercontent.com/macros/echo?user_content_key=AehSKLjExwWJjDrJqFZgjsS1a2Nmg2N_ZK_Q0Yz3xQSjD_CmZJqQeIvcM1sd7Hm6XNU4JJnmmSUUFXaFbmb-SIqAazzxCIU5-Wh6x83FqdHGv7c5kqYUHkLk1YgUgS3M_vJmH3MPFrhob_TlqCddYuFazTfRVXJShw135KLs4nslmUYV6Ym4Z-d7-RAMZAWpQKaEyNPbPLv2PYtaTP7konuEeWKd_LIC5RAgOLcKOZ-XfaLZSQGtcYO55iV6NES23nn6U6T6RB-gjbpEl3997fcOJ30MNaIJEQ&lib=Mh7UCAuJioTUahunKg1oLGeKEOrVaWvYM";
+const API_URL = "https://script.googleusercontent.com/macros/echo?user_content_key=AehSKLjExwWJjDrJqFZgjsS1a2Nmg2N_ZK_Q0Yz3xQSjD_CmZJqQeIvcM1sd7Hm6XNU4JJnmmSUUFXaFbmb-SIqAazzxCIU5-Wh6x83FqdHGv7c5qYUHkLk1YgUgS3M_vJmH3MPFrhob_TlqCddYuFazTfRVXJShw135KLs4nslmUYV6Ym4Z-d7-RAMZAWpQKaEyNPbPLv2PYtaTP7konuEeWKd_LIC5RAgOLcKOZ-XfaLZSQGtcYO55iV6NES23nn6U6T6RB-gjbpEl3997fcOJ30MNaIJEQ&lib=Mh7UCAuJioTUahunKg1oLGeKEOrVaWvYM";
+
 let db = [];
+let isLoading = false;
+
+/* SHOW MESSAGE */
+function showMessage(text, type = 'info') {
+  const msgEl = document.getElementById('message');
+  msgEl.className = `message ${type}`;
+  msgEl.textContent = text;
+  msgEl.style.display = 'block';
+  
+  // Auto hide after 5 seconds for success/info, keep error visible
+  if (type !== 'error') {
+    setTimeout(() => {
+      msgEl.style.display = 'none';
+    }, 5000);
+  }
+}
 
 /* LOAD DATABASE */
-fetch(API_URL)
-.then(res => res.json())
-.then(data => {
-  db = data;
-  const select = document.getElementById("produk");
-  data.forEach(d => {
-    const opt = document.createElement("option");
-    opt.value = d.id;
-    opt.textContent = d.nama_produk;
-    select.appendChild(opt);
-  });
-});
+async function loadDatabase() {
+  const loadingIndicator = document.getElementById('loadingIndicator');
+  const btnGenerate = document.getElementById('btnGenerate');
+  
+  try {
+    loadingIndicator.style.display = 'block';
+    btnGenerate.disabled = true;
+    
+    const response = await fetch(API_URL);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    if (!Array.isArray(data) || data.length === 0) {
+      throw new Error('Data produk tidak ditemukan atau kosong');
+    }
+    
+    db = data;
+    const select = document.getElementById("produk");
+    
+    // Clear existing options except first one
+    select.innerHTML = '<option value="">-- Pilih Produk --</option>';
+    
+    data.forEach(d => {
+      const opt = document.createElement("option");
+      opt.value = d.id;
+      opt.textContent = d.nama_produk || `Produk ${d.id}`;
+      select.appendChild(opt);
+    });
+    
+    showMessage(`${data.length} produk berhasil dimuat`, 'success');
+    
+  } catch (error) {
+    console.error('Error loading database:', error);
+    showMessage(`Gagal memuat data: ${error.message}`, 'error');
+  } finally {
+    loadingIndicator.style.display = 'none';
+    btnGenerate.disabled = false;
+  }
+}
+
+/* PRELOAD IMAGES */
+function preloadImages(urls) {
+  return Promise.all(
+    urls.map(url => {
+      return new Promise((resolve, reject) => {
+        if (!url) {
+          resolve(null);
+          return;
+        }
+        
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        
+        img.onload = () => resolve(img);
+        img.onerror = () => {
+          console.warn(`Gagal memuat gambar: ${url}`);
+          resolve(null); // Continue even if image fails
+        };
+        
+        img.src = url;
+      });
+    })
+  );
+}
 
 /* GENERATE POP */
-function generatePOP() {
+async function generatePOP() {
   const id = document.getElementById("produk").value;
-  if (!id) return alert("Pilih produk");
-
+  
+  if (!id) {
+    showMessage("Silakan pilih produk terlebih dahulu", 'error');
+    return;
+  }
+  
   const d = db.find(x => x.id == id);
+  
+  if (!d) {
+    showMessage("Data produk tidak ditemukan", 'error');
+    return;
+  }
+  
+  try {
+    isLoading = true;
+    const btnGenerate = document.getElementById('btnGenerate');
+    btnGenerate.disabled = true;
+    
+    showMessage("Memuat gambar...", 'info');
+    
+    // Preload images
+    const imageUrls = [d.gambar_badge, d.gambar_produk].filter(Boolean);
+    await preloadImages(imageUrls);
+    
+    const hasilDiv = document.getElementById("hasil");
+    hasilDiv.innerHTML = `
+      <div id="popCanvas" class="pop">
+        <div class="card">
 
-  document.getElementById("hasil").innerHTML = `
-    <div id="popCanvas" class="pop">
-      <div class="card">
+          <div class="left">
+            <img src="${d.gambar_badge || ''}" crossorigin="anonymous" alt="${d.nama_produk || ''}" onerror="this.style.display='none'">
+          </div>
 
-        <div class="left">
-          <img src="${d.gambar_badge}" crossorigin="anonymous">
+          <div class="right">
+            <img src="${d.gambar_produk || ''}" crossorigin="anonymous" alt="${d.nama_produk || ''}" onerror="this.style.display='none'">
+
+            <h2>${escapeHtml(d.nama_produk || 'N/A')}</h2>
+            <p>${escapeHtml(d.varian || '')}</p>
+
+            ${d.harga_normal ? `<div class="old-price">Rp ${rupiah(d.harga_normal)}</div>` : ''}
+            ${d.harga_promo ? `<div class="promo-price">Rp ${rupiah(d.harga_promo)}</div>` : ''}
+
+            ${d.periode ? `<p>Periode: ${escapeHtml(d.periode)}</p>` : ''}
+          </div>
+
         </div>
-
-        <div class="right">
-          <img src="${d.gambar_produk}" crossorigin="anonymous"><br><br>
-
-          <h2>${d.nama_produk}</h2>
-          <p>${d.varian}</p>
-
-          <div class="old-price">Rp ${rupiah(d.harga_normal)}</div>
-          <div class="promo-price">Rp ${rupiah(d.harga_promo)}</div>
-
-          <p>Periode: ${d.periode}</p>
-        </div>
-
       </div>
-    </div>
 
-    <br>
-    <button onclick="downloadPDF()">Download PDF</button>
-  `;
+      <div class="download-btn-container">
+        <button id="btnDownload" onclick="downloadPDF()">Download PDF</button>
+      </div>
+    `;
+    
+    showMessage("POP berhasil dibuat! Klik 'Download PDF' untuk mengunduh", 'success');
+    
+  } catch (error) {
+    console.error('Error generating POP:', error);
+    showMessage(`Gagal membuat POP: ${error.message}`, 'error');
+  } finally {
+    isLoading = false;
+    const btnGenerate = document.getElementById('btnGenerate');
+    btnGenerate.disabled = false;
+  }
 }
 
 /* EXPORT PDF 60x20 CM */
 async function downloadPDF() {
   const element = document.getElementById("popCanvas");
+  
+  if (!element) {
+    showMessage("POP belum dibuat. Silakan generate terlebih dahulu", 'error');
+    return;
+  }
+  
+  try {
+    const btnDownload = document.getElementById('btnDownload');
+    if (btnDownload) {
+      btnDownload.disabled = true;
+      btnDownload.textContent = 'Membuat PDF...';
+    }
+    
+    showMessage("Sedang membuat PDF, mohon tunggu...", 'info');
+    
+    // Ensure images are loaded before capturing
+    const images = element.querySelectorAll('img');
+    await Promise.all(
+      Array.from(images).map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise((resolve) => {
+          img.onload = resolve;
+          img.onerror = resolve; // Continue even if image fails
+          // Timeout after 5 seconds
+          setTimeout(resolve, 5000);
+        });
+      })
+    );
+    
+    const canvas = await html2canvas(element, {
+      scale: 1,
+      useCORS: true,
+      backgroundColor: "#4f86c6",
+      logging: false,
+      allowTaint: false,
+      removeContainer: true,
+      imageTimeout: 5000
+    });
 
-  const canvas = await html2canvas(element, {
-    scale: 1,
-    useCORS: true,
-    backgroundColor: "#4f86c6"
-  });
+    const imgData = canvas.toDataURL("image/jpeg", 1.0);
 
-  const imgData = canvas.toDataURL("image/jpeg", 1.0);
+    const { jsPDF } = window.jspdf;
 
-  const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({
+      orientation: "landscape",
+      unit: "cm",
+      format: [60, 20],
+      compress: true
+    });
 
-  const pdf = new jsPDF({
-    orientation: "landscape",
-    unit: "cm",
-    format: [60, 20]
-  });
-
-  pdf.addImage(imgData, "JPEG", 0, 0, 60, 20);
-  pdf.save("POP_60x20cm_PRINT.pdf");
+    pdf.addImage(imgData, "JPEG", 0, 0, 60, 20, undefined, 'FAST');
+    
+    const productName = db.find(d => d.id == document.getElementById('produk').value)?.nama_produk || 'POP';
+    const fileName = `POP_60x20cm_${productName.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+    
+    pdf.save(fileName);
+    
+    showMessage("PDF berhasil diunduh!", 'success');
+    
+  } catch (error) {
+    console.error('Error downloading PDF:', error);
+    showMessage(`Gagal membuat PDF: ${error.message}`, 'error');
+  } finally {
+    const btnDownload = document.getElementById('btnDownload');
+    if (btnDownload) {
+      btnDownload.disabled = false;
+      btnDownload.textContent = 'Download PDF';
+    }
+  }
 }
 
 /* FORMAT RUPIAH */
 function rupiah(x) {
+  if (!x && x !== 0) return '0';
   return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 }
+
+/* ESCAPE HTML */
+function escapeHtml(text) {
+  if (!text) return '';
+  const map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+  return text.toString().replace(/[&<>"']/g, m => map[m]);
+}
+
+/* INITIALIZE */
+window.addEventListener('DOMContentLoaded', () => {
+  loadDatabase();
+});
+
+/* KEYBOARD SHORTCUTS */
+document.addEventListener('keydown', (e) => {
+  // Ctrl/Cmd + Enter to generate
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    e.preventDefault();
+    generatePOP();
+  }
+});
 </script>
 
 </body>
