@@ -105,7 +105,7 @@ p {
 <div id="hasil"></div>
 
 <script>
-const API_URL = "PASTE_API_URL_DISINI";
+const API_URL = "https://script.googleusercontent.com/macros/echo?user_content_key=AehSKLjExwWJjDrJqFZgjsS1a2Nmg2N_ZK_Q0Yz3xQSjD_CmZJqQeIvcM1sd7Hm6XNU4JJnmmSUUFXaFbmb-SIqAazzxCIU5-Wh6x83FqdHGv7c5kqYUHkLk1YgUgS3M_vJmH3MPFrhob_TlqCddYuFazTfRVXJShw135KLs4nslmUYV6Ym4Z-d7-RAMZAWpQKaEyNPbPLv2PYtaTP7konuEeWKd_LIC5RAgOLcKOZ-XfaLZSQGtcYO55iV6NES23nn6U6T6RB-gjbpEl3997fcOJ30MNaIJEQ&lib=Mh7UCAuJioTUahunKg1oLGeKEOrVaWvYM";
 let db = [];
 
 /* LOAD DATABASE */
